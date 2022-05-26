@@ -120,7 +120,7 @@ function VerifyPackages() {
         
         echo "[PACKAGE] $filename"
 
-        if [[ ! -e $filename ]]; then
+        if [[ -e $filename ]]; then
             echo "[PACKAGE] [EXISTS]"
             
             size=$(stat --format=%s "${info[Filename]}" 2>/dev/null) || size=0
