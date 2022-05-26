@@ -183,6 +183,11 @@ function Update() {
 #                                                                             #
 ###############################################################################
 
+pidof /volume1/Hive/Scripts/updaterepo.sh > /dev/null && {
+  echo "Another instance of updaterepo is already running"
+  exit 1
+}
+
 case "$1" in
 	--check-repo-ver)
 		CheckRepoVer
