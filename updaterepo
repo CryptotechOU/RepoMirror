@@ -1,157 +1,230 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# default repository url. May be overriden by /hive-config/repo-sync.url
-REPOURL=https://download.hiveos.farm/repo/binary/
+###############################################################################
+#                                                                             #
+#                               Configuration                                 #
+#                                                                             #
+###############################################################################
 
-# default repository path
-REPOPATH=/var/www/html/repomirror
+CLONING_REPOSITORY="https://download2.hiveos.farm/repo/binary"
+CLONING_DIRECTORY="/volume1/Hive/Repo"
 
-# for all the programs running from within the script, make sure they run in the "UTC" time zone
-# (or whatever is set on the remote repo server as the timezone for timestamps of the files in the repo)
+WGET_PATH="/usr/bin/wget"
+WGET_PARAMS="-t 0 -T 20 -nv -e robots=off"
+WGET_VERBOSE="-v"
+WGET="${WGET_PATH} ${WGET_PARAMS}"
+
+EXIT_NETWORK=2
+EXIT_FAILURE=1
+EXIT_SUCCESS=0
+FALSE=0
+TRUE=1
+
+mkdir -p $CLONING_DIRECTORY
 export TZ=UTC
-WGET="/usr/bin/wget -t 0 -T 20 -nv -e robots=off"
-[[ -t 1 && "$1" == "-v" ]] && WGET+=" -v"
 
+###############################################################################
+#                                                                             #
+#                                  Methods                                    #
+#                                                                             #
+###############################################################################
 
-function mydate() {
-	date --rfc-3339=seconds
+function CheckRepoVer() {
+    on_remote=`${WGET} -O - "${CLONING_REPOSITORY}/RepoVer"`
+
+    exitcode=$?
+
+    if [[ $exitcode -ne $SUCCESS ]]; then
+        echo "Network Error: failed to get fetch RepoVer from target repository: exitcode: $exitcode"
+        exit $EXIT_NETWORK
+    fi
+
+    if [[ ! -e $CLONING_DIRECTORY/RepoVer ]]; then
+        echo "Local RepoVer is missing"
+    else
+        on_local=`cat "${CLONING_DIRECTORY}/RepoVer"`
+
+        if [[ $on_remote == $on_local ]]; then
+            echo "RepoVer is up to date"
+
+            return
+        fi
+    fi
+
+    echo "Updating RepoVer"
+    echo "$on_remote" > "${CLONING_DIRECTORY}/RepoVer"
 }
 
+function CheckInRelease() {
+    on_remote=`${WGET} -O - "${CLONING_REPOSITORY}/InRelease"`
 
-function check_md5() {
-	# check md5 using InRelease
-	local file="$1"
-	local md5=`md5sum "$REPOPATH/repo/binary/$file" 2>/dev/null | awk '{ printf $1 }'`
-	local exp
-	exp=`grep -A 3 -m 1 "MD5Sum:" $REPOPATH/repo/binary/InRelease | grep "$file$" | awk '{ printf $1 }'` &&
-		[[ "$exp" == "$md5" ]] && return 0
-	[[ -z "$md5" ]] &&
-		echo "Error: $file - not exists" ||
-		echo "Error: $file - bad MD5 $md5 (expected $exp)"
-	return 1
+    exitcode=$?
+
+    if [[ $exitcode -ne $SUCCESS ]]; then
+        echo "Network Error: failed to get fetch InRelease from target repository: exitcode: $exitcode"
+        exit $EXIT_NETWORK
+    fi
+
+    if [[ ! -e $CLONING_DIRECTORY/InRelease ]]; then
+        echo "Local InRelease is missing"
+    else
+        on_local=`cat "${CLONING_DIRECTORY}/InRelease"`
+
+        if [[ $on_remote == $on_local ]]; then
+            echo "InRelease is up to date"
+
+            return
+        fi
+    fi
+
+    echo "Updating InRelease"
+    echo "$on_remote" > "${CLONING_DIRECTORY}/InRelease"
 }
 
-#echo "$(mydate): PID $$"
+function DownloadFile() {
+    ${WGET} -O "${CLONING_DIRECTORY}/$1" "${CLONING_REPOSITORY}/$1"
+}
 
-pids=(`pgrep -f $0`)
-for pid in "${pids[@]}"; do
-	[[ $$ != $pid ]] && echo "Repo update is already running (PID $pid), exiting" && exit 0
-done
+function ValidateCoreFile() {
+    if [[ -e "${CLONING_DIRECTORY}/$1" ]]; then
+        echo "Verifying core file [$1] checksum hash"
 
-[[ -e /hive-config/repo-sync.url ]] &&
-	repourl=`cat /hive-config/repo-sync.url | grep -v "^$" | grep -v "^#" | head -n 1`
+        actual=`md5sum "$CLONING_DIRECTORY/$1" 2>/dev/null | awk '{ printf $1 }'`
+        expected=`grep -A 3 -m 1 "MD5Sum:" $CLONING_DIRECTORY/InRelease | grep "$1$" | awk '{ printf $1 }'`
 
-[[ -z $repourl ]] &&
-	repourl="$REPOURL"
+        if [[ $actual == $expected ]]; then
+            echo "Verification: OK"
 
-# should end in a / for successful sync, add trailing slash if missing
-[[ "${repourl}" != */ ]] && repourl="${repourl}/"
+            return
+        else
+            echo "Verification: Hash mismatch: actual: $actual, expected: $expected"
+        fi
+    fi
 
-# This does not work as rig will fetch from itself
-#repourl=`cat /etc/apt/sources.list.d/hiverepo.list | grep '^deb http' | tail -n 1 | awk '{print $2}'`
-echo "Repo URL: $repourl"
+    echo "Updating core file: [$1]"
+    DownloadFile $1
 
-domain=`echo "$repourl" | sed -e 's|^[^/]*//||' -e 's|/.*$||'`
-echo "Domain: $domain"
+    exitcode=$?
+    
+    if [[ $exitcode -ne 0 ]]; then
+        echo "File download failed: [$1], exitcode: [$exitcode]"
+        exit EXIT_NETWORK
+    fi
+}
 
-cd /var/www/html
+function VerifyPackages() {
+    while IFS="|:" read -a arr; do
+        filename=${arr[1]}
+        filesize=${arr[3]}
+        filehash=${arr[5]}
+        
+        echo "[PACKAGE] $filename"
 
-echo "Working under $(pwd)"
+        if [[ ! -e $filename ]]; then
+            echo "[PACKAGE] [EXISTS]"
+            
+            size=$(stat --format=%s "${info[Filename]}" 2>/dev/null) || size=0
+            
+            if [[ $filesize -ne $size ]]; then
+                echo "[PACKAGE] [SIZE_MISMATCH]"
+            fi
+        else
+            echo "[PACKAGE] [MISSING]"
+        fi
 
-# wget will download to domain directory, so link it appropriately
-[[ ! -e /var/www/html/$domain ]] &&
-	ln -sf $REPOPATH /var/www/html/$domain
+        echo "[PACKAGE] [DOWNLOADING] $(( ${filesize%% *} / 1024 / 1024)) MB"
+        DownloadFile $filename
+    done < <( cat -s "${CLONING_DIRECTORY}/Packages" | grep -E "^$|^Filename|^MD5sum|^Size" | tr '\n' '|' | sed  's/||/\n/g' | tr -d ' ' )
+}
 
-need_update=1
+###############################################################################
+#                                                                             #
+#                                  Utility                                    #
+#                                                                             #
+###############################################################################
 
-# check RepoVer
-repover=`${WGET} -O - "${repourl}RepoVer"`
-exitcode=$?
-[[ $exitcode -ne 0 ]] && echo "Error: Unable to get RepoVer (exitcode=$exitcode), exiting" && exit 1
-echo "RepoVer: $repover"
 
-# check for repo update
-if [[ -e $REPOPATH/repo/binary/InRelease ]]; then
-	echo "$(mydate): Checking repo update"
-	release=`${WGET} -O - "${repourl}InRelease"`
-	exitcode=$?
-	[[ $exitcode -ne 0 ]] && echo "Error: Unable to get InRelease file (exitcode=$exitcode), exiting" && exit 2
+function EchoHelp() {
+    echo "${WHITE}Help:$NOCOLOR"
+    echo "  Here some help."
+    echo ""
+}
 
-	if [[ ! -z "$release" && "$release" == "$(< $REPOPATH/repo/binary/InRelease )" ]]; then
-		echo "Repo is up to date!"
-		need_update=0
-	fi
-fi
+function EchoUsage() {
+    echo "${WHITE}Usage:$NOCOLOR"
+    echo "  $0  -u | --update     	Make full update"
+    echo "  $0  --check-repo-ver	Check current RepoVer on cloning repository"
+    echo "  $0  --check-in-release	Check current InRelease on cloning repository"
+    echo "  $0       --usage    	Echo usage"
+    echo "  $0  -h | --help     	Echo help"
+    echo ""
+}
+###############################################################################
+#                                                                             #
+#                                 Functions                                   #
+#                                                                             #
+###############################################################################
 
-# check md5 using InRelease
-if [[ $need_update -eq 0 ]]; then
-	check_md5 Packages || need_update=1
-	check_md5 Packages.gz || need_update=1
-fi
+function Update() {
+    CheckRepoVer
+    CheckInRelease
 
-if [[ $need_update -ne 0 ]]; then
-	# remove files like RepoVer and other files which are not actual packages
-	if [[ -e $REPOPATH/repo/binary ]]; then
-		for file in `ls $REPOPATH/repo/binary/* | grep -v deb`
-		do
-			rm -f $file
-		done
-	fi
+    ValidateCoreFile Packages
+    ValidateCoreFile Packages.gz
+    ValidateCoreFile Release
+    # ValidateCoreFile Release.gpg
 
-	# Request re-sync of everything except DEB files with conditional if-modified-since requests from the remote repo server,
-	# overwriting local files with ones from the remote server. Using Packages for download DEB files later
-	# Because -c and -N do not seem to work too nicely in GNU wget (only larger-than-original new files get synced upon update),
-	# just use -N instead of  trying to save bandwidth upon incomplete downloads
+    VerifyPackages
+}
 
-	echo "$(mydate): Updating repo packages"
-	${WGET} -r --no-parent --level=1 --reject=deb -N "$repourl" || echo "Error: Syncing failed (exitcode=$exitcode)"
+###############################################################################
+#                                                                             #
+#                            Command line options                             #
+#                                                                             #
+###############################################################################
 
-	# Remove index files so directory contents will be generated via nginx
-	# this may cause a certain amount of trash-talk from wget complaining about unavailable last-modified timestamps.
-	rm -f repomirror/repo/index.html
-	rm -f repomirror/repo/binary/index.html
-fi
+case "$1" in
+	--check-repo-ver)
+		CheckRepoVer
 
-cd $REPOPATH/repo/binary
+		exit $EXIT_SUCCESS
+		;;
 
-[[ ! -e InRelease ]] && echo "Error: No InRelease file, exiting" && exit 3
+	-u|--update)
+		Update
 
-updated=`grep -oP "Date: \K.*" InRelease` && echo "Repo update time: $updated"
+		exit $EXIT_SUCCESS
+		;;
 
-[[ ! -e Packages ]] && echo "Error: No Packages listing, exiting" && exit 4
+	--check-in-release)
+		CheckInRelease
 
-# check md5 again using InRelease
-if [[ $need_update -ne 0 ]]; then
-	check_md5 Packages
-	[[ $? -ne 0 ]] && echo "Exiting" && exit 5
-fi
+		exit $EXIT_SUCCESS
+		;;
 
-# Check for md5 mismatches vs Packages file, if we have one from a successful download.
-# Insane Packages file will cause massive deletion of .deb files, but c'est la vie
-echo "$(mydate): Checking and downloading missed/damaged/incomplete files using fresh Packages listing"
-cnt=0
-while IFS="|:" read -a arr; do
-	declare -A info=( ["${arr[0]}"]="${arr[1]}" ["${arr[2]}"]="${arr[3]}" ["${arr[4]}"]="${arr[5]}" )
-	(( ++cnt % 100 == 0 )) && [[ -t 1 ]] && echo "Files processed: $cnt"
-	#echo "${info[Filename]} ${info[Size]} ${info[MD5sum]}"
-	file="${info[Filename]/.\/}"
-	[[ -z "$file" ]] && continue;
-	if [[ -e "${info[Filename]}" ]]; then
-		size=$(stat --format=%s "${info[Filename]}" 2>/dev/null) || size=0
-		if [[ ! -z "${info[Size]}" && "${info[Size]}" -gt $size ]]; then
-			echo "Error: $file - incomplete download ($size/${info[Size]}), resuming"
-			${WGET} -c ${repourl}$file
-		fi
-		[[ -z "${info[MD5sum]}" || $(md5sum "${info[Filename]}" | awk '{printf $1}') == "${info[MD5sum]}" ]] && continue
-			echo "Error: $file - bad MD5 sum, deleting"
-			unlink "${info[Filename]}"
-	fi
-	echo "Downloading ${repourl}$file"
-	${WGET} ${repourl}$file
-	# we can check again but repo may be updated during checking
-done < <( cat -s Packages | grep -E "^$|^Filename|^MD5sum|^Size" | tr '\n' '|' | sed  's/||/\n/g' | tr -d ' ' )
-echo "Files processed: $cnt"
+    -h|--help)
+        EchoHelp
+        EchoUsage
 
-echo "$(mydate): Done."
+        exit $EXIT_SUCCESS
+        ;;
 
-exit 0
+	--usage)
+        EchoUsage
+
+		exit $EXIT_SUCCESS
+		;;
+
+	*)
+		echo "${YELLOW}Unknown option. Use -h for help $NOCOLOR"
+		exit $EXIT_FAILURE
+		;;
+esac
+
+###############################################################################
+#                                                                             #
+#                                  END                                        #
+#                                                                             #
+###############################################################################
+
+exit
