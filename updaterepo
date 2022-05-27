@@ -120,16 +120,16 @@ function VerifyPackages() {
         
         echo "[PACKAGE] $filename"
 
-        if [[ -e "${CLONING_DIRECTORY}/$1" ]]; then
+        if [[ -e "${CLONING_DIRECTORY}/$filename" ]]; then
             echo "[PACKAGE] [EXISTS]"
             
-            size=$(stat --format=%s "${info[Filename]}" 2>/dev/null) || size=0
+            size=$(stat --format=%s "${CLONING_DIRECTORY}/$filename" 2>/dev/null) || size=0
             
             if [[ $filesize -ne $size ]]; then
                 echo "[PACKAGE] [SIZE_MISMATCH] expected: $(( ${filesize%% *} / 1024 / 1024)) MB, on disk: $(( ${size%% *} / 1024 / 1024)) MB"
             fi
         else
-            echo "[PACKAGE] [MISSING] ${CLONING_DIRECTORY}/$1"
+            echo "[PACKAGE] [MISSING] ${CLONING_DIRECTORY}/$filename"
         fi
 
         echo "[PACKAGE] [DOWNLOADING] $(( ${filesize%% *} / 1024 / 1024)) MB"
