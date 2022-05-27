@@ -121,7 +121,7 @@ function VerifyPackages() {
         echo "[PACKAGE] $filename"
 
         if [[ -e "${CLONING_DIRECTORY}/$filename" ]]; then
-            echo "[PACKAGE] [EXISTS]"
+            echo "[PACKAGE] [EXISTS] ${CLONING_DIRECTORY}/$filename"
             
             size=$(stat --format=%s "${CLONING_DIRECTORY}/$filename" 2>/dev/null) || size=0
             
