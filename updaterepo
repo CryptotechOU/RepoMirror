@@ -128,6 +128,8 @@ function VerifyPackages() {
             if [[ $filesize -ne $size ]]; then
                 echo "[PACKAGE] [SIZE_MISMATCH] expected: $(( ${filesize%% *} / 1024 / 1024)) MB, on disk: $(( ${size%% *} / 1024 / 1024)) MB"
             fi
+
+            continue
         else
             echo "[PACKAGE] [MISSING] ${CLONING_DIRECTORY}/$filename"
         fi
