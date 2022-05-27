@@ -126,7 +126,7 @@ function VerifyPackages() {
             size=$(stat --format=%s "${info[Filename]}" 2>/dev/null) || size=0
             
             if [[ $filesize -ne $size ]]; then
-                echo "[PACKAGE] [SIZE_MISMATCH]"
+                echo "[PACKAGE] [SIZE_MISMATCH] expected: $(( ${filesize%% *} / 1024 / 1024)) MB, on disk: $(( ${size%% *} / 1024 / 1024)) MB"
             fi
         else
             echo "[PACKAGE] [MISSING]"
