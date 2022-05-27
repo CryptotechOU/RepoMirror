@@ -129,7 +129,7 @@ function VerifyPackages() {
                 echo "[PACKAGE] [SIZE_MISMATCH] expected: $(( ${filesize%% *} / 1024 / 1024)) MB, on disk: $(( ${size%% *} / 1024 / 1024)) MB"
             fi
         else
-            echo "[PACKAGE] [MISSING]"
+            echo "[PACKAGE] [MISSING] ${CLONING_DIRECTORY}/$1"
         fi
 
         echo "[PACKAGE] [DOWNLOADING] $(( ${filesize%% *} / 1024 / 1024)) MB"
