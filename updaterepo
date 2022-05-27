@@ -118,10 +118,10 @@ function VerifyPackages() {
         filesize=${arr[3]}
         filehash=${arr[5]}
         
-        echo "[PACKAGE] $filename"
+        echo "[PACKAGE] Processing: ${CLONING_DIRECTORY}/$filename"
 
         if [[ -e "${CLONING_DIRECTORY}/$filename" ]]; then
-            echo "[PACKAGE] [EXISTS] ${CLONING_DIRECTORY}/$filename"
+            echo "[PACKAGE] File exists on disk"
             
             size=$(stat --format=%s "${CLONING_DIRECTORY}/$filename" 2>/dev/null) || size=0
             
@@ -129,12 +129,13 @@ function VerifyPackages() {
                 echo "[PACKAGE] [SIZE_MISMATCH] expected: $(( ${filesize%% *} / 1024 / 1024)) MB, on disk: $(( ${size%% *} / 1024 / 1024)) MB"
             fi
 
+            echo "[PACKAGE] File OK"
             continue
         else
-            echo "[PACKAGE] [MISSING] ${CLONING_DIRECTORY}/$filename"
+            echo "[PACKAGE] [MISSING] File is not present on local disk"
         fi
 
-        echo "[PACKAGE] [DOWNLOADING] $(( ${filesize%% *} / 1024 / 1024)) MB"
+        echo "[PACKAGE] [DOWNLOADING] File size: $(( ${filesize%% *} / 1024 / 1024)) MB"
         DownloadFile $filename
     done < <( cat -s "${CLONING_DIRECTORY}/Packages" | grep -E "^$|^Filename|^MD5sum|^Size" | tr '\n' '|' | sed  's/||/\n/g' | tr -d ' ' )
 }
