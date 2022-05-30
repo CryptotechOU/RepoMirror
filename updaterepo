@@ -113,10 +113,17 @@ function ValidateCoreFile() {
 }
 
 function VerifyPackages() {
+    echo "[VERIFICATION] Starting files verification"
+
+    CHECKED_FILES=0
+    UPDATED_FILES=0
+
     while IFS="|:" read -a arr; do
         filename=${arr[1]}
         filesize=${arr[3]}
         filehash=${arr[5]}
+
+        CHECKED_FILES=$(( CHECKED_FILES + 1 ))
         
         echo "[PACKAGE] Processing: ${CLONING_DIRECTORY}/$filename"
 
@@ -137,7 +144,12 @@ function VerifyPackages() {
 
         echo "[PACKAGE] [DOWNLOADING] File size: $(( ${filesize%% *} / 1024 / 1024)) MB"
         DownloadFile $filename
+        UPDATED_FILES=$(( UPDATED_FILES + 1 ))
     done < <( cat -s "${CLONING_DIRECTORY}/Packages" | grep -E "^$|^Filename|^MD5sum|^Size" | tr '\n' '|' | sed  's/||/\n/g' | tr -d ' ' )
+
+    echo "[VERIFICATION] Verification complete"
+    echo "[VERIFICATION] Total checked files: $CHECKED_FILES"
+    echo "[VERIFICATION] Updated/replaced files: $UPDATED_FILES"
 }
 
 ###############################################################################
