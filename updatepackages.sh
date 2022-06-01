@@ -1,11 +1,11 @@
 #!/bin/bash
 
-BASE_DIRECTORY="/home/sadava/HiveDevelopment/Hive"
+BASE_DIRECTORY="/volume1/Hive"
 ORIGINAL_DIRECTORY="$BASE_DIRECTORY/Repo"
 UPDATED_DIRECTORY="$BASE_DIRECTORY/Depo"
 TEMP_DIRECTORY="$BASE_DIRECTORY/tmp"
 
-INJECTED_CODE="/home/sadava/HiveDevelopment/RepoMirror/injected.sh"
+INJECTED_CODE="/volume1/Hive/Scripts/injected.sh"
 
 function package_cleanup() {
 	echo "[PACKAGE] [CLEANUP] Starting: $TEMP_DIRECTORY"
@@ -112,8 +112,6 @@ function repository_reindex() {
 }
 
 function main() {
-	package="hive-miners-gminer_0.6-173_amd64.deb"
-
 	mkdir -p $BASE_DIRECTORY
 	mkdir -p $ORIGINAL_DIRECTORY
 	mkdir -p $UPDATED_DIRECTORY
