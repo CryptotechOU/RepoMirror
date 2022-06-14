@@ -61,7 +61,8 @@ if [[ $? -eq 1 ]] ; then
 	echo "Selected remote: $CURRENT_REMOTE"
 else
 	echo "None of the servers responded"
-    	message danger "Failed to connect to any server."  
+    	message danger "Failed to connect to any server." 
+    	exit 1 
 fi
 
 # Delete original
@@ -106,4 +107,5 @@ if [ $? -eq 0 ]; then
 else
 	echo "doInstall failure"
    	message danger "Installation failed"  
+   	exit 1
 fi
