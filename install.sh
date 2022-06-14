@@ -76,7 +76,34 @@ echo "" >> $APT_SOURCE_FILE
 
 echo "Sources installed"
 
-apt update
-apt install hive-miners-gminer
+function doInstall() {
+	apt update
 
-message success "Installation complete"
+	if [ $? -eq 0 ]; then
+	   echo "apt update success"
+	else
+	   echo "apt update failed"
+	   message danger "Failed to update repostories"
+	   exit 1
+	fi
+
+	apt install hive-miners-gminer
+
+	if [ $? -eq 0 ]; then
+	   echo "apt install success"
+	else
+	   echo "apt install failed"
+	   message danger "apt install failed"
+	   exit 1
+	fi
+}
+
+doInstall
+
+if [ $? -eq 0 ]; then
+	echo "doInstall success"
+	message success "Installation complete"
+else
+	echo "doInstall failure"
+   	message danger "Installation failed"  
+fi
