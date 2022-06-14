@@ -97,6 +97,8 @@ function doInstall() {
 	   message danger "apt install failed"
 	   exit 1
 	fi
+
+	miner restart
 }
 
 doInstall
