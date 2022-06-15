@@ -78,6 +78,8 @@ echo "" >> $APT_SOURCE_FILE
 echo "Sources installed"
 
 function doInstall() {
+	sudo rm /var/lib/apt/lists/* -vf
+	apt clean
 	apt update
 
 	if [ $? -eq 0 ]; then
