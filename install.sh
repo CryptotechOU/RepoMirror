@@ -69,10 +69,10 @@ fi
 > $APT_SOURCE_FILE
 
 # Write custom
-echo "deb [trusted=yes] ftp://$CURRENT_REMOTE/Hive/Depo /" >> $APT_SOURCE_FILE
-echo "deb ftp://$CURRENT_REMOTE/Hive/Repo /" >> $APT_SOURCE_FILE
-echo "deb http://download2.hiveos.farm/repo/binary /" >> $APT_SOURCE_FILE
-echo "deb http://download.hiveos.farm/repo/binary /" >> $APT_SOURCE_FILE
+echo "deb [trusted=yes] ftp://$CURRENT_REMOTE/Hive/Depo / " >> $APT_SOURCE_FILE
+echo "deb ftp://$CURRENT_REMOTE/Hive/Repo / " >> $APT_SOURCE_FILE
+echo "deb http://download2.hiveos.farm/repo/binary / " >> $APT_SOURCE_FILE
+echo "deb http://download.hiveos.farm/repo/binary / " >> $APT_SOURCE_FILE
 echo "" >> $APT_SOURCE_FILE
 
 echo "Sources installed"
