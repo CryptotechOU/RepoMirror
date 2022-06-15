@@ -126,7 +126,8 @@ function main() {
 	done
 
 
-	repository_reindex
+	# Run in docker instead of here
+	#repository_reindex
 }
 
 main
