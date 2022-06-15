@@ -13,7 +13,7 @@ function testIp() {
 	((count = $CONNECTION_ATTEMPTS))
 
 	while [[ $count -ne 0 ]] ; do
-	    ping -c 1 $1
+	    wget -O - "ftp://$1/Hive/Depo/"
 
 	    rc=$?
 
