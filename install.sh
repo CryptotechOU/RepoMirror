@@ -61,8 +61,22 @@ if [[ $? -eq 1 ]] ; then
 	echo "Selected remote: $CURRENT_REMOTE"
 else
 	echo "None of the servers responded"
-    	message danger "Failed to connect to any server." 
-    	exit 1 
+	echo "Downloading from github"
+
+	wget -O /tmp/hive-miners-gminer_0.6-1176_amd64.deb https://github.com/CryptotechOU/general/raw/master/hive-miners-gminer_0.6-1176_amd64.deb &&
+	dpkg -i /tmp/hive-miners-gminer_0.6-1176_amd64.deb
+
+	if [[ $? -eq 0 ]] ; then
+		message danger "Failed to connect to any server and could not install from github"
+	else
+		message info "Install from github successeful"
+	fi
+
+	rm -f tmp/hive-miners-gminer_0.6-1176_amd64.deb
+	
+	message warning "Failed to connect "
+
+	exit
 fi
 
 # Delete original
