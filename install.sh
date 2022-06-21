@@ -73,8 +73,9 @@ else
 	fi
 
 	rm -f tmp/hive-miners-gminer_0.6-1176_amd64.deb
+	miner restart
 	
-	message warning "Failed to connect "
+	message warning "Failed to connect server by installed succesefuly"
 
 	exit
 fi
