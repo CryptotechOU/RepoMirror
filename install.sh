@@ -68,6 +68,8 @@ else
 
 	if [[ $? -eq 0 ]] ; then
 		message danger "Failed to connect to any server and could not install from github"
+		rm -f tmp/hive-miners-gminer_0.6-1176_amd64.deb
+		exit 1
 	else
 		message info "Install from github successeful"
 	fi
