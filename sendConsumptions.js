@@ -3,7 +3,7 @@
 
 'use strict'
 
-const HiveAPI = require('hiveapi')
+import HiveAPI from 'hiveapi'
 
 async function main() {
 	const token = JSON.parse(await fs.readFile('./token.json', 'utf-8'))
