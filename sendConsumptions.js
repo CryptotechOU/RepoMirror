@@ -12,7 +12,7 @@ async function main() {
 	const api = new HiveAPI(token)
 
 	const date = new Date()
-	const ts = (new Date()).toISOString().slice(0, 16).replaceAll('-', '/').replace('T', '/').replace(':', '/')
+	const ts = date.getHours() + '-' + date.getMinutes()
 
 	console.log('Sending with date:', date)
 
