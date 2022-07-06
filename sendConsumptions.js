@@ -20,11 +20,11 @@ async function main() {
 
 		return Promise.all(workers.map(worker => {
 			const url = 'https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
-				`${farm.id}/${worker.id}.json`
+				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}.json`
 
 			const body = JSON.stringify({
 				consumption: worker.data.stats.power_draw || 0,
-				timestamp: date.toISOString()
+				timestamp: date.getHours() + '-' + date.getMinutes()
 			})
 
 			return fetch(url, { method: 'PUT', body })
