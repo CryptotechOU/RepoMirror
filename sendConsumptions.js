@@ -15,7 +15,7 @@ async function main() {
 
 	const farms = await api.farms.all()
 
-	return Promise.all(farms.map(farm => {
+	return Promise.all(farms.map(async farm => {
 		const workers = await farm.workers.all()
 
 		return Promise.all(workers.map(worker => {
