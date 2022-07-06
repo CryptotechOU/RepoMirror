@@ -7,7 +7,7 @@ import HiveAPI from 'hiveapi'
 import fs from 'fs'
 
 async function main() {
-	const token = JSON.parse(await fs.readFile('./token.json', 'utf-8'))
+	const token = JSON.parse(fs.readFileSync('./token.json', 'utf-8'))
 	const api = new HiveAPI(token)
 
 	const date = new Date()
