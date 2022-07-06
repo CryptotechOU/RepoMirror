@@ -5,6 +5,7 @@
 
 import HiveAPI from 'hiveapi'
 import fs from 'fs'
+import fetch from 'node-fetch'
 
 async function main() {
 	const token = JSON.parse(fs.readFileSync('./token.json', 'utf-8'))
