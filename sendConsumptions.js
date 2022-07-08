@@ -12,7 +12,6 @@ async function main() {
 	const api = new HiveAPI(token)
 
 	const date = new Date()
-	const ts = date.getHours() + '-' + date.getMinutes()
 
 	console.log('Sending with date:', date)
 
@@ -23,7 +22,7 @@ async function main() {
 
 		return Promise.all(workers.map(worker => {
 			const url = 'https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
-				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}/${ts}.json`
+				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}/${date.getHours()}/${date.getMinutes()}.json`
 
 			return fetch(url, { method: 'PUT', body: worker.data.stats.power_draw || 0 })
 				.then(() => console.log('[SENT]', farm.name, '-', worker.name, '-', consumption, 'W'))
