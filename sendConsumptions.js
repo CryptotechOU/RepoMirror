@@ -26,7 +26,7 @@ async function main() {
 
 			return fetch(url, { method: 'PUT', body: worker.data.stats.power_draw || 0 })
 				.then(() => console.log('[SENT]', farm.name, '-', worker.name, '-', consumption, 'W'))
-				.catch(e => console.error('[ERROR]', farm.name, '-', worker.name))
+				.catch(e => console.error('[ERROR]', farm.name, '-', worker.name, e))
 		}))
 	}))
 }
