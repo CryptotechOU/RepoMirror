@@ -24,7 +24,7 @@ async function main() {
 			const url = 'https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
 				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}/${date.getHours()}/${date.getMinutes()}.json`
 
-			return fetch(url, { method: 'PUT', body: worker.data.stats.power_draw || 0 })
+			return fetch(url, { method: 'PUT', body: worker?.data?.stats?.power_draw || 0 })
 				.then(() => console.log('[SENT]', farm.name, '-', worker.name, '-', consumption, 'W'))
 				.catch(e => console.error('[ERROR]', farm.name, '-', worker.name, e))
 		}))
