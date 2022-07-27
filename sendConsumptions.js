@@ -23,9 +23,11 @@ async function main() {
 		return Promise.all(workers.map(worker => {
 			const url = 'https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
 				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}/${date.getHours()}/${date.getMinutes()}.json`
+			
+			const consumption = worker?.data?.stats?.power_draw || 0
 
-			return fetch(url, { method: 'PUT', body: worker?.data?.stats?.power_draw || 0 })
-				.then(() => console.log('[SENT]', farm.name, '-', worker.name, '-', consumption, 'W'))
+			return fetch(url, { method: 'PUT', body: consumption })
+				.then(() => console.log('[SENT]', farm.name, '-', worker.name, '- ', consumption, 'W'))
 				.catch(e => console.error('[ERROR]', farm.name, '-', worker.name, e))
 		}))
 	}))
