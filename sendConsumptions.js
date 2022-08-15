@@ -34,7 +34,13 @@ async function main() {
 }
 
 main()
-	.then(() => console.log('main done'))
-	.catch(e => console.error('main error', e))
+	.then(() => {
+		console.log('main done')
+		process.exit(0)
+	})
+	.catch(e => {
+		console.error('main error', e)
+		process.exit(1)
+	})
 
 // EOF
