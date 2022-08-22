@@ -35,6 +35,7 @@
 CONF=/hive-config/rig.conf
 PACKAGE=cryptotechos
 DATABASE="https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app"
+DIRECTORY="status/worker"
 
 #######################################
 #                                     #
@@ -135,7 +136,7 @@ fi
 #######################################
 
 curl -X PUT -d "{ \"timestamp\": \"$TIMESTAMP\", \"version\": \"$VERSION\" }" \
-  "$DATABASE/status/$RIG_ID.json"
+  "$DATABASE/$DIRECTORY/$RIG_ID.json"
 
 RESULT=$?
 
