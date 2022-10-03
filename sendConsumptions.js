@@ -21,7 +21,7 @@ async function main() {
 		const workers = await farm.workers.all()
 
 		return Promise.all(workers.map(worker => {
-			const url = 'https://cryptotech-crm-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
+			const url = 'https://cryptotech-74837-default-rtdb.europe-west1.firebasedatabase.app/consumption/' +
 				`${farm.id}/${worker.id}/${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}/${date.getHours()}/${date.getMinutes()}.json`
 			
 			const consumption = worker?.data?.stats?.power_draw || 0
